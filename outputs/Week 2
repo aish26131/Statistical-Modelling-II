@@ -1,0 +1,62 @@
+summary(players)
+     team             position              age        minutes_played
+ Length:620         Length:620         Min.   :17.00   Min.   : 105  
+ Class :character   Class :character   1st Qu.:22.00   1st Qu.:2025  
+ Mode  :character   Mode  :character   Median :25.00   Median :2544  
+                                       Mean   :25.06   Mean   :2540  
+                                       3rd Qu.:28.00   3rd Qu.:3058  
+                                       Max.   :36.00   Max.   :3960  
+ training_load   prev_injuries         bmi           injured      
+ Min.   :1.000   Min.   :0.0000   Min.   :19.00   Min.   :0.0000  
+ 1st Qu.:3.000   1st Qu.:0.0000   1st Qu.:22.57   1st Qu.:0.0000  
+ Median :3.000   Median :1.0000   Median :23.60   Median :0.0000  
+ Mean   :3.202   Mean   :0.9032   Mean   :23.52   Mean   :0.1855  
+ 3rd Qu.:4.000   3rd Qu.:1.0000   3rd Qu.:24.50   3rd Qu.:0.0000  
+ Max.   :5.000   Max.   :4.0000   Max.   :27.90   Max.   :1.0000  
+
+summary(matches)
+  home_away          goals_scored   goals_conceded   opponent_rank  
+ Length:46          Min.   :0.000   Min.   :0.0000   Min.   : 1.00  
+ Class :character   1st Qu.:0.000   1st Qu.:0.0000   1st Qu.: 6.25  
+ Mode  :character   Median :1.000   Median :1.0000   Median :13.00  
+                    Mean   :1.304   Mean   :0.8261   Mean   :12.65  
+                    3rd Qu.:2.000   3rd Qu.:1.0000   3rd Qu.:18.75  
+                    Max.   :8.000   Max.   :3.0000   Max.   :24.00 
+
+str(players)
+'data.frame':	620 obs. of  8 variables:
+ $ team          : chr  "Ashford United" "Ashford United" "Ashford United" "Ashford United" ...
+ $ position      : chr  "DEF" "GK" "DEF" "DEF" ...
+ $ age           : int  27 27 27 21 26 25 24 26 25 26 ...
+ $ minutes_played: int  3117 3960 2172 2782 3472 2242 2887 2979 2474 2558 ...
+ $ training_load : int  4 4 2 2 5 2 3 3 2 2 ...
+ $ prev_injuries : int  0 2 2 3 0 0 1 0 0 1 ...
+ $ bmi           : num  25.2 21.8 19 20.5 24.1 23.3 22.8 24.1 21.7 26.4 ...
+ $ injured       : int  1 0 0 1 0 0 0 0 0 0 ...
+
+str(matches)
+'data.frame':	46 obs. of  4 variables:
+ $ home_away     : chr  "Home" "Home" "Home" "Home" ...
+ $ goals_scored  : int  2 0 1 2 3 0 0 8 1 2 ...
+ $ goals_conceded: int  1 1 0 0 1 2 0 0 1 0 ...
+ $ opponent_rank : int  1 3 4 6 20 2 18 24 7 23 ...
+
+summary(model)
+
+Call:
+lm(formula = goals_scored ~ opponent_rank, data = matches)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-1.9409 -0.7823 -0.1578  0.6549  5.9230 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)  
+(Intercept)    0.44284    0.40719   1.088   0.2827  
+opponent_rank  0.06809    0.02813   2.421   0.0197 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 1.342 on 44 degrees of freedom
+Multiple R-squared:  0.1175,	Adjusted R-squared:  0.09745 
+F-statistic: 5.859 on 1 and 44 DF,  p-value: 0.01969
