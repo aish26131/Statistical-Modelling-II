@@ -1,0 +1,130 @@
+
+> players <- read.csv("league_players.csv", header = T)
+
+> players <- players[complete.cases(players[, c("injured", 
++     "training_load")]), ]
+
+> stopifnot(all(players$injured %in% c(0, 1)))
+
+> summary(players[, c("injured", "training_load")])
+    injured       training_load  
+ Min.   :0.0000   Min.   :1.000  
+ 1st Qu.:0.0000   1st Qu.:3.000  
+ Median :0.0000   Median :3.000  
+ Mean   :0.1855   Mean   :3.202  
+ 3rd Qu.:0.0000   3rd Qu.:4.000  
+ Max.   :1.0000   Max.   :5.000  
+
+> table(players$injured)
+
+  0   1 
+505 115 
+
+> mean(players$injured)
+[1] 0.1854839
+
+> injury_rate <- aggregate(injured ~ training_load, 
++     data = players, FUN = mean)
+
+> injury_rate
+  training_load   injured
+1             1 0.1500000
+2             2 0.1127820
+3             3 0.1589958
+4             4 0.2594937
+5             5 0.2571429
+
+> model <- glm(injured ~ training_load, family = binomial(link = "logit"), 
++     data = players)
+
+> summary(model)
+
+Call:
+glm(formula = injured ~ training_load, family = binomial(link = "logit"), 
+    data = players)
+
+Coefficients:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept)    -2.6431     0.3742  -7.064 1.62e-12 ***
+training_load   0.3513     0.1051   3.343  0.00083 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 594.71  on 619  degrees of freedom
+Residual deviance: 583.27  on 618  degrees of freedom
+AIC: 587.27
+
+Number of Fisher Scoring iterations: 4
+
+
+> odds_ratio <- exp(coef(model))
+
+> se <- sqrt(diag(vcov(model)))
+
+> lower <- exp(coef(model) - 1.96 * se)
+
+> upper <- exp(coef(model) + 1.96 * se)
+
+> results <- data.frame(odds_ratio, lower, upper)
+
+> results
+              odds_ratio      lower     upper
+(Intercept)   0.07113976 0.03416656 0.1481234
+training_load 1.42093928 1.15641120 1.7459779
+
+> null_model <- glm(injured ~ 1, family = binomial(link = "logit"), 
++     data = players)
+
+> anova(null_model, model, test = "Chisq")
+Analysis of Deviance Table
+
+Model 1: injured ~ 1
+Model 2: injured ~ training_load
+  Resid. Df Resid. Dev Df Deviance Pr(>Chi)    
+1       619     594.71                         
+2       618     583.27  1   11.445 0.000717 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+> new_players <- data.frame(training_load = 1:5)
+
+> prediction <- predict(model, newdata = new_players, 
++     type = "link", se.fit = TRUE)
+
+> new_players$probability <- plogis(prediction$fit)
+
+> new_players$lower <- plogis(prediction$fit - 1.96 * 
++     prediction$se.fit)
+
+> new_players$upper <- plogis(prediction$fit + 1.96 * 
++     prediction$se.fit)
+
+> new_players
+  training_load probability      lower     upper
+1             1  0.09180514 0.05570192 0.1476498
+2             2  0.12559595 0.09135519 0.1702656
+3             3  0.16950289 0.14050857 0.2030667
+4             4  0.22481282 0.18622730 0.2687528
+5             5  0.29182886 0.21908241 0.3770673
+
+> plot(injury_rate$training_load, injury_rate$injured, 
++     xlab = "Training Load", ylab = "Probability of Injury", main = "Injury Probability vs Tr ..." ... [TRUNCATED] 
+
+> axis(1, at = 1:5)
+
+> lines(new_players$training_load, new_players$probability, 
++     col = "red", lwd = 2)
+
+> lines(new_players$training_load, new_players$lower, 
++     col = "red", lty = 2)
+
+> lines(new_players$training_load, new_players$upper, 
++     col = "red", lty = 2)
+
+> legend("topleft", legend = c("Observed proportion", 
++     "Fitted probability", "95% confidence interval"), col = c("black", 
++     "red", "red"),  .... [TRUNCATED] 
+null device 
+          1 
