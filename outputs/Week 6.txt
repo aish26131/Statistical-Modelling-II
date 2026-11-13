@@ -1,3 +1,376 @@
+> players <- read.csv("league_players.csv")
+> 
+> head(players)
+            team position age minutes_played training_load prev_injuries  bmi
+1 Ashford United      DEF  27           3117             4             0 25.2
+2 Ashford United       GK  27           3960             4             2 21.8
+3 Ashford United      DEF  27           2172             2             2 19.0
+4 Ashford United      DEF  21           2782             2             3 20.5
+5 Ashford United       GK  26           3472             5             0 24.1
+6 Ashford United      FWD  25           2242             2             0 23.3
+  injured
+1       1
+2       0
+3       0
+4       1
+5       0
+6       0
+> str(players)
+'data.frame':	620 obs. of  8 variables:
+ $ team          : chr  "Ashford United" "Ashford United" "Ashford United" "Ashford United" ...
+ $ position      : chr  "DEF" "GK" "DEF" "DEF" ...
+ $ age           : int  27 27 27 21 26 25 24 26 25 26 ...
+ $ minutes_played: int  3117 3960 2172 2782 3472 2242 2887 2979 2474 2558 ...
+ $ training_load : int  4 4 2 2 5 2 3 3 2 2 ...
+ $ prev_injuries : int  0 2 2 3 0 0 1 0 0 1 ...
+ $ bmi           : num  25.2 21.8 19 20.5 24.1 23.3 22.8 24.1 21.7 26.4 ...
+ $ injured       : int  1 0 0 1 0 0 0 0 0 0 ...
+> summary(players)
+     team             position              age        minutes_played
+ Length:620         Length:620         Min.   :17.00   Min.   : 105  
+ Class :character   Class :character   1st Qu.:22.00   1st Qu.:2025  
+ Mode  :character   Mode  :character   Median :25.00   Median :2544  
+                                       Mean   :25.06   Mean   :2540  
+                                       3rd Qu.:28.00   3rd Qu.:3058  
+                                       Max.   :36.00   Max.   :3960  
+ training_load   prev_injuries         bmi           injured      
+ Min.   :1.000   Min.   :0.0000   Min.   :19.00   Min.   :0.0000  
+ 1st Qu.:3.000   1st Qu.:0.0000   1st Qu.:22.57   1st Qu.:0.0000  
+ Median :3.000   Median :1.0000   Median :23.60   Median :0.0000  
+ Mean   :3.202   Mean   :0.9032   Mean   :23.52   Mean   :0.1855  
+ 3rd Qu.:4.000   3rd Qu.:1.0000   3rd Qu.:24.50   3rd Qu.:0.0000  
+ Max.   :5.000   Max.   :4.0000   Max.   :27.90   Max.   :1.0000  
+> names(players)
+[1] "team"           "position"       "age"            "minutes_played"
+[5] "training_load"  "prev_injuries"  "bmi"            "injured"       
+> 
+> 
+> # 2. Convert variables into factors
+> players$position <- factor(players$position,
++                            levels = c("GK", "DEF", "MID", "FWD"))
+> 
+> players$injured <- factor(players$injured,
++                           levels = c(0, 1),
++                           labels = c("No", "Yes"))
+> 
+> 
+> # 3. Construct a contingency table
+> injury_table <- table(players$position, players$injured)
+> 
+> injury_table
+     
+       No Yes
+  GK   45  17
+  DEF 182  34
+  MID 167  39
+  FWD 111  25
+> 
+> injury_counts <- as.data.frame(injury_table)
+> 
+> names(injury_counts) <- c("position", "injured", "freq")
+> 
+> # Include row and column totals
+> addmargins(injury_table)
+     
+       No Yes Sum
+  GK   45  17  62
+  DEF 182  34 216
+  MID 167  39 206
+  FWD 111  25 136
+  Sum 505 115 620
+> 
+> # Row percentages
+> round(prop.table(injury_table, margin = 1) * 100, 2)
+     
+         No   Yes
+  GK  72.58 27.42
+  DEF 84.26 15.74
+  MID 81.07 18.93
+  FWD 81.62 18.38
+> 
+> 
+> # 4. Visualise the relationship
+> barplot(t(injury_table),
++         beside = FALSE,
++         legend.text = TRUE,
++         col = c("lightblue", "salmon"),
++         main = "Injury status by playing position",
++         xlab = "Playing position",
++         ylab = "Number of players")
+> 
+> # Proportional bar chart
+> barplot(t(prop.table(injury_table, margin = 1)),
++         legend.text = TRUE,
++         col = c("lightblue", "salmon"),
++         main = "Proportion injured by position",
++         xlab = "Playing position",
++         ylab = "Proportion")
+> 
+> 
+> # 5. Chi-squared test of independence
+> chi_test <- chisq.test(injury_table)
+> 
+> chi_test
+
+	Pearson's Chi-squared test
+
+data:  injury_table
+X-squared = 4.379, df = 3, p-value = 0.2233
+
+> 
+> # Expected frequencies
+> chi_test$expected
+     
+            No      Yes
+  GK   50.5000 11.50000
+  DEF 175.9355 40.06452
+  MID 167.7903 38.20968
+  FWD 110.7742 25.22581
+> 
+> # Pearson residuals
+> chi_test$residuals
+     
+               No         Yes
+  GK  -0.77395730  1.62186152
+  DEF  0.45721391 -0.95811183
+  MID -0.06101280  0.12785500
+  FWD  0.02145443 -0.04495871
+> 
+> 
+> # 6. Log-linear modelling
+> # Convert the contingency table into a data frame
+> injury_counts <- as.data.frame(injury_table)
+> 
+> names(injury_counts) <- c("position", "injured", "freq")
+> 
+> # Independence model
+> ind_model <- glm(freq ~ position + injured,
++                  family = poisson(link = "log"),
++                  data = injury_counts)
+> 
+> # Association model
+> assoc_model <- glm(freq ~ position * injured,
++                    family = poisson(link = "log"),
++                    data = injury_counts)
+> 
+> # Compare models
+> anova(ind_model, assoc_model, test = "Chisq")
+Analysis of Deviance Table
+
+Model 1: freq ~ position + injured
+Model 2: freq ~ position * injured
+  Resid. Df Resid. Dev Df Deviance Pr(>Chi)
+1         3     4.1088                     
+2         0     0.0000  3   4.1088     0.25
+> 
+> # Examine model fit
+> summary(ind_model)
+
+Call:
+glm(formula = freq ~ position + injured, family = poisson(link = "log"), 
+    data = injury_counts)
+
+Coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)   3.9220     0.1284  30.536  < 2e-16 ***
+positionDEF   1.2481     0.1441   8.663  < 2e-16 ***
+positionMID   1.2007     0.1449   8.289  < 2e-16 ***
+positionFWD   0.7855     0.1532   5.126 2.96e-07 ***
+injuredYes   -1.4796     0.1033 -14.320  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for poisson family taken to be 1)
+
+    Null deviance: 380.2624  on 7  degrees of freedom
+Residual deviance:   4.1088  on 3  degrees of freedom
+AIC: 60.925
+
+Number of Fisher Scoring iterations: 4
+
+> deviance(ind_model)
+[1] 4.108769
+> df.residual(ind_model)
+[1] 3
+> 
+> # Expected counts under independence
+> fitted(ind_model)
+        1         2         3         4         5         6         7         8 
+ 50.50000 175.93548 167.79032 110.77419  11.50000  40.06452  38.20968  25.22581 
+> 
+> # Model comparison
+> AIC(ind_model, assoc_model)
+            df      AIC
+ind_model    5 60.92475
+assoc_model  8 62.81598
+> head(players)
+            team position age minutes_played training_load prev_injuries  bmi
+1 Ashford United      DEF  27           3117             4             0 25.2
+2 Ashford United       GK  27           3960             4             2 21.8
+3 Ashford United      DEF  27           2172             2             2 19.0
+4 Ashford United      DEF  21           2782             2             3 20.5
+5 Ashford United       GK  26           3472             5             0 24.1
+6 Ashford United      FWD  25           2242             2             0 23.3
+  injured
+1     Yes
+2      No
+3      No
+4     Yes
+5      No
+6      No
+> str(players)
+'data.frame':	620 obs. of  8 variables:
+ $ team          : chr  "Ashford United" "Ashford United" "Ashford United" "Ashford United" ...
+ $ position      : Factor w/ 4 levels "GK","DEF","MID",..: 2 1 2 2 1 4 3 2 2 1 ...
+ $ age           : int  27 27 27 21 26 25 24 26 25 26 ...
+ $ minutes_played: int  3117 3960 2172 2782 3472 2242 2887 2979 2474 2558 ...
+ $ training_load : int  4 4 2 2 5 2 3 3 2 2 ...
+ $ prev_injuries : int  0 2 2 3 0 0 1 0 0 1 ...
+ $ bmi           : num  25.2 21.8 19 20.5 24.1 23.3 22.8 24.1 21.7 26.4 ...
+ $ injured       : Factor w/ 2 levels "No","Yes": 2 1 1 2 1 1 1 1 1 1 ...
+> summary(players)
+     team           position       age        minutes_played training_load  
+ Length:620         GK : 62   Min.   :17.00   Min.   : 105   Min.   :1.000  
+ Class :character   DEF:216   1st Qu.:22.00   1st Qu.:2025   1st Qu.:3.000  
+ Mode  :character   MID:206   Median :25.00   Median :2544   Median :3.000  
+                    FWD:136   Mean   :25.06   Mean   :2540   Mean   :3.202  
+                              3rd Qu.:28.00   3rd Qu.:3058   3rd Qu.:4.000  
+                              Max.   :36.00   Max.   :3960   Max.   :5.000  
+ prev_injuries         bmi        injured  
+ Min.   :0.0000   Min.   :19.00   No :505  
+ 1st Qu.:0.0000   1st Qu.:22.57   Yes:115  
+ Median :1.0000   Median :23.60            
+ Mean   :0.9032   Mean   :23.52            
+ 3rd Qu.:1.0000   3rd Qu.:24.50            
+ Max.   :4.0000   Max.   :27.90            
+> names(players)
+[1] "team"           "position"       "age"            "minutes_played"
+[5] "training_load"  "prev_injuries"  "bmi"            "injured"       
+> # 2. Convert variables into factors
+> players$position <- factor(players$position,
++                            levels = c("GK", "DEF", "MID", "FWD"))
+> # 3. Construct a contingency table
+> injury_table <- table(players$position, players$injured)
+> injury_table
+     
+       No Yes
+  GK   45  17
+  DEF 182  34
+  MID 167  39
+  FWD 111  25
+> injury_counts <- as.data.frame(injury_table)
+> names(injury_counts) <- c("position", "injured", "freq")
+> # Include row and column totals
+> addmargins(injury_table)
+     
+       No Yes Sum
+  GK   45  17  62
+  DEF 182  34 216
+  MID 167  39 206
+  FWD 111  25 136
+  Sum 505 115 620
+> # Row percentages
+> round(prop.table(injury_table, margin = 1) * 100, 2)
+     
+         No   Yes
+  GK  72.58 27.42
+  DEF 84.26 15.74
+  MID 81.07 18.93
+  FWD 81.62 18.38
+> # 4. Visualise the relationship
+> barplot(t(injury_table),
++         beside = FALSE,
++         legend.text = TRUE,
++         col = c("lightblue", "salmon"),
++         main = "Injury status by playing position",
++         xlab = "Playing position",
++         ylab = "Number of players")
+> # Proportional bar chart
+> barplot(t(prop.table(injury_table, margin = 1)),
++         legend.text = TRUE,
++         col = c("lightblue", "salmon"),
++         main = "Proportion injured by position",
++         xlab = "Playing position",
++         ylab = "Proportion")
+> # 5. Chi-squared test of independence
+> chi_test <- chisq.test(injury_table)
+> chi_test
+
+	Pearson's Chi-squared test
+
+data:  injury_table
+X-squared = 4.379, df = 3, p-value = 0.2233
+
+> # Expected frequencies
+> chi_test$expected
+     
+            No      Yes
+  GK   50.5000 11.50000
+  DEF 175.9355 40.06452
+  MID 167.7903 38.20968
+  FWD 110.7742 25.22581
+> # Pearson residuals
+> chi_test$residuals
+     
+               No         Yes
+  GK  -0.77395730  1.62186152
+  DEF  0.45721391 -0.95811183
+  MID -0.06101280  0.12785500
+  FWD  0.02145443 -0.04495871
+> # 6. Log-linear modelling
+> # Convert the contingency table into a data frame
+> injury_counts <- as.data.frame(injury_table)
+> names(injury_counts) <- c("position", "injured", "freq")
+> # Compare models
+> anova(ind_model, assoc_model, test = "Chisq")
+Analysis of Deviance Table
+
+Model 1: freq ~ position + injured
+Model 2: freq ~ position * injured
+  Resid. Df Resid. Dev Df Deviance Pr(>Chi)
+1         3     4.1088                     
+2         0     0.0000  3   4.1088     0.25
+> # Examine model fit
+> summary(ind_model)
+
+Call:
+glm(formula = freq ~ position + injured, family = poisson(link = "log"), 
+    data = injury_counts)
+
+Coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)   3.9220     0.1284  30.536  < 2e-16 ***
+positionDEF   1.2481     0.1441   8.663  < 2e-16 ***
+positionMID   1.2007     0.1449   8.289  < 2e-16 ***
+positionFWD   0.7855     0.1532   5.126 2.96e-07 ***
+injuredYes   -1.4796     0.1033 -14.320  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for poisson family taken to be 1)
+
+    Null deviance: 380.2624  on 7  degrees of freedom
+Residual deviance:   4.1088  on 3  degrees of freedom
+AIC: 60.925
+
+Number of Fisher Scoring iterations: 4
+
+> deviance(ind_model)
+[1] 4.108769
+> df.residual(ind_model)
+[1] 3
+> # Expected counts under independence
+> fitted(ind_model)
+        1         2         3         4         5         6         7         8 
+ 50.50000 175.93548 167.79032 110.77419  11.50000  40.06452  38.20968  25.22581 
+> # Model comparison
+> AIC(ind_model, assoc_model)
+            df      AIC
+ind_model    5 60.92475
+assoc_model  8 62.81598
+> # 1. Import the dataset
+> matches <- read.csv("ashford_matches.csv")
+> # Inspect the data
 > head(matches)
   home_away goals_scored goals_conceded opponent_rank
 1      Home            2              1             1
@@ -26,10 +399,20 @@
 > # 2. Prepare the variables
 > names(matches)
 [1] "home_away"      "goals_scored"   "goals_conceded" "opponent_rank" 
+> # Convert home/away into a categorical variable
+> matches$home_away <- factor(matches$home_away)
+> # Set Away as the reference category
+> matches$home_away <- relevel(matches$home_away, ref = "Away")
 > # Distribution of goals scored
 > table(matches$goals_scored)
+
  0  1  2  3  8 
 14 15 11  5  1 
+> barplot(table(matches$goals_scored),
++         main = "Distribution of goals scored",
++         xlab = "Goals scored",
++         ylab = "Number of matches",
++         col = "lightblue")
 > # Mean and variance of goals scored
 > mean(matches$goals_scored)
 [1] 1.304348
@@ -41,7 +424,28 @@
   home_away goals_scored
 1      Away    0.8695652
 2      Home    1.7391304
+> # Goals scored against opponent rank
+> plot(matches$opponent_rank, matches$goals_scored,
++      xlab = "Opponent league rank",
++      ylab = "Goals scored",
++      main = "Goals scored vs opponent rank",
++      pch = 19)
 > # Null model
+> model0 <- glm(goals_scored ~ 1,
++               family = poisson(link = "log"),
++               data = matches)
+> # Model with home/away
+> model1 <- glm(goals_scored ~ home_away,
++               family = poisson(link = "log"),
++               data = matches)
+> # Model with home/away and opponent rank
+> model2 <- glm(goals_scored ~ home_away + opponent_rank,
++               family = poisson(link = "log"),
++               data = matches)
+> # Model including interaction
+> model3 <- glm(goals_scored ~ home_away * opponent_rank,
++               family = poisson(link = "log"),
++               data = matches)
 > anova(model0, model1, model2, model3,
 +       test = "Chisq")
 Analysis of Deviance Table
@@ -96,3 +500,25 @@ Number of Fisher Scoring iterations: 5
 (Intercept)   0.1969094 0.8414786
 home_awayHome 1.1692817 3.4209037
 opponent_rank 1.0164696 1.0967600
+> dispersion <- sum(residuals(model2, type = "pearson")^2) /
++   df.residual(model2)
+> dispersion
+[1] 0.9904079
+> # Deviance residuals vs fitted values
+> plot(fitted(model2),
++      residuals(model2, type = "deviance"),
++      xlab = "Fitted values",
++      ylab = "Deviance residuals",
++      main = "Residuals vs fitted values",
++      pch = 19)
+> abline(h = 0, col = "red", lty = 2)
+> # Observed vs predicted goals
+> plot(fitted(model2), matches$goals_scored,
++      xlab = "Predicted goals",
++      ylab = "Observed goals",
++      main = "Observed vs predicted goals",
++      pch = 19)
+> abline(0, 1, col = "red", lty = 2)
+> 1 - pchisq(deviance(model2),
++            df.residual(model2))
+[1] 0.221428
