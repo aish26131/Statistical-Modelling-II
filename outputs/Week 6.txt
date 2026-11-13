@@ -1,0 +1,98 @@
+> head(matches)
+  home_away goals_scored goals_conceded opponent_rank
+1      Home            2              1             1
+2      Home            0              1             3
+3      Home            1              0             4
+4      Home            2              0             6
+5      Home            3              1            20
+6      Home            0              2             2
+> str(matches)
+'data.frame':	46 obs. of  4 variables:
+ $ home_away     : chr  "Home" "Home" "Home" "Home" ...
+ $ goals_scored  : int  2 0 1 2 3 0 0 8 1 2 ...
+ $ goals_conceded: int  1 1 0 0 1 2 0 0 1 0 ...
+ $ opponent_rank : int  1 3 4 6 20 2 18 24 7 23 ...
+> summary(matches)
+  home_away          goals_scored   goals_conceded   opponent_rank  
+ Length:46          Min.   :0.000   Min.   :0.0000   Min.   : 1.00  
+ Class :character   1st Qu.:0.000   1st Qu.:0.0000   1st Qu.: 6.25  
+ Mode  :character   Median :1.000   Median :1.0000   Median :13.00  
+                    Mean   :1.304   Mean   :0.8261   Mean   :12.65  
+                    3rd Qu.:2.000   3rd Qu.:1.0000   3rd Qu.:18.75  
+                    Max.   :8.000   Max.   :3.0000   Max.   :24.00  
+> colSums(is.na(matches))
+     home_away   goals_scored goals_conceded  opponent_rank 
+             0              0              0              0 
+> # 2. Prepare the variables
+> names(matches)
+[1] "home_away"      "goals_scored"   "goals_conceded" "opponent_rank" 
+> # Distribution of goals scored
+> table(matches$goals_scored)
+ 0  1  2  3  8 
+14 15 11  5  1 
+> # Mean and variance of goals scored
+> mean(matches$goals_scored)
+[1] 1.304348
+> var(matches$goals_scored)
+[1] 1.994203
+> # Mean goals by home/away
+> aggregate(goals_scored ~ home_away,
++           data = matches, FUN = mean)
+  home_away goals_scored
+1      Away    0.8695652
+2      Home    1.7391304
+> # Null model
+> anova(model0, model1, model2, model3,
++       test = "Chisq")
+Analysis of Deviance Table
+
+Model 1: goals_scored ~ 1
+Model 2: goals_scored ~ home_away
+Model 3: goals_scored ~ home_away + opponent_rank
+Model 4: goals_scored ~ home_away * opponent_rank
+  Resid. Df Resid. Dev Df Deviance Pr(>Chi)   
+1        45     64.844                        
+2        44     58.048  1   6.7960 0.009136 **
+3        43     49.785  1   8.2631 0.004046 **
+4        42     49.423  1   0.3610 0.547933   
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> AIC(model0, model1, model2, model3)
+       df      AIC
+model0  1 144.4917
+model1  2 139.6957
+model2  3 133.4326
+model3  4 135.0716
+> # 6. Examine the additive model
+> summary(model2)
+
+Call:
+glm(formula = goals_scored ~ home_away + opponent_rank, family = poisson(link = "log"), 
+    data = matches)
+
+Coefficients:
+              Estimate Std. Error z value Pr(>|z|)   
+(Intercept)   -0.89880    0.37052  -2.426  0.01528 * 
+home_awayHome  0.69315    0.27386   2.531  0.01137 * 
+opponent_rank  0.05435    0.01939   2.802  0.00507 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for poisson family taken to be 1)
+
+    Null deviance: 64.844  on 45  degrees of freedom
+Residual deviance: 49.785  on 43  degrees of freedom
+AIC: 133.43
+
+Number of Fisher Scoring iterations: 5
+
+> # Exponentiate coefficients
+> exp(coef(model2))
+  (Intercept) home_awayHome opponent_rank 
+    0.4070565     2.0000000     1.0558519 
+> # 95% confidence intervals for rate ratios
+> exp(confint.default(model2))
+                  2.5 %    97.5 %
+(Intercept)   0.1969094 0.8414786
+home_awayHome 1.1692817 3.4209037
+opponent_rank 1.0164696 1.0967600
