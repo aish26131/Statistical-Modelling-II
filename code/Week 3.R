@@ -39,3 +39,24 @@ win_model <- glm(win ~ opponent_rank + home_away,
 summary(win_model)
 drop1(win_model, test = "Chisq")
 exp(cbind(odds_ratio = coef(win_model), confint(win_model)))
+
+#save week 3 outputs
+write.csv(drop1(full_model, test = "Chisq"), "week3_injury_drop1.csv")
+write.csv(round(exp(cbind(odds_ratio = coef(reduced_model), confint(reduced_model))), 3),
+          "week3_injury_odds_ratios.csv")
+write.csv(round(exp(cbind(odds_ratio = coef(win_model), confint(win_model))), 3),
+          "week3_win_odds_ratios.csv")
+
+#plot of predicted injury probability by training load (age fixed at average)
+png("week3_injury_probability.png", width = 800, height = 600)
+new_players <- expand.grid(training_load = 1:5, prev_injuries = c(0, 2),
+                           age = mean(players$age))
+new_players$prob <- predict(reduced_model, new_players, type = "response")
+plot(1:5, new_players$prob[new_players$prev_injuries == 0], type = "b", pch = 16,
+     ylim = c(0, 1), xlab = "Training load",
+     ylab = "Predicted probability of injury",
+     main = "Predicted injury probability (average age)")
+lines(1:5, new_players$prob[new_players$prev_injuries == 2], type = "b", lty = 2)
+legend("topleft", c("0 previous injuries", "2 previous injuries"),
+       lty = c(1, 2), pch = c(16, 1))
+dev.off()
