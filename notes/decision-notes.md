@@ -1,1 +1,1 @@
-
+Lily Week 3: extended Week 4’s injury model to all player variables. LRT (drop1) kept age, training_load and prev_injuries; dropped minutes_played, bmi and position after a joint LRT. Checked training_load × position interaction. Also fitted a logistic model for Ashford wins. 
