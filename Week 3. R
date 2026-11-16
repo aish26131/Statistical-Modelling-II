@@ -1,0 +1,160 @@
+## =====================================================================
+## MTH6134 Group Project - Week 3: Logistic regression
+## Methods (Week 3 notes): binomial GLM with logit link, odds ratios,
+## Wald tests, deviance, likelihood ratio (drop-in-deviance) tests,
+## profile-likelihood and Wald CIs for odds ratios.
+##
+## Part A: player injury (league_players.csv), binary response `injured`
+## Part B: Ashford match wins (ashford_matches.csv), derived binary `win`
+## =====================================================================
+
+## ---- Setup ----------------------------------------------------------
+# league_players.csv is actually an Excel file saved with a .csv name,
+# so it is read with readxl (run install.packages("readxl") once if needed).
+# ashford_matches.csv is a genuine CSV.
+players <- as.data.frame(readxl::read_xlsx("league_players.csv"))
+players$position <- factor(players$position)
+players$team     <- factor(players$team)
+
+matches <- read.csv("ashford_matches.csv", stringsAsFactors = TRUE)
+
+str(players)
+summary(players)
+
+
+## =====================================================================
+## PART A: Which player characteristics are associated with injury?
+## =====================================================================
+
+## ---- A1. Exploratory analysis ---------------------------------------
+table(players$injured)
+mean(players$injured)                         # overall injury proportion
+
+# Injury proportion by categorical / discrete predictors
+tapply(players$injured, players$position, mean)
+tapply(players$injured, players$training_load, mean)
+tapply(players$injured, players$prev_injuries, mean)
+
+# Continuous predictors: compare distributions for injured vs not
+par(mfrow = c(2, 2))
+boxplot(age ~ injured, data = players, xlab = "Injured", ylab = "Age")
+boxplot(minutes_played ~ injured, data = players, xlab = "Injured",
+        ylab = "Minutes played")
+boxplot(bmi ~ injured, data = players, xlab = "Injured", ylab = "BMI")
+barplot(tapply(players$injured, players$training_load, mean),
+        xlab = "Training load", ylab = "Proportion injured")
+par(mfrow = c(1, 1))
+
+## ---- A2. Single-predictor model (cf. senility example) ---------------
+fit.load <- glm(injured ~ training_load,
+                family = binomial(link = "logit"), data = players)
+summary(fit.load)
+
+# Odds ratio for a one-unit increase in training load
+exp(coef(fit.load)["training_load"])
+
+# Fitted probability curve over the data (cf. WAIS plot in the notes)
+plot(jitter(players$training_load, 0.5), players$injured,
+     xlab = "Training load", ylab = "Injured (1 = yes, 0 = no)")
+grid.load <- data.frame(training_load = seq(0, 6, length.out = 100))
+lines(grid.load$training_load,
+      predict(fit.load, grid.load, type = "response"), lwd = 2)
+
+## ---- A3. Full additive model ----------------------------------------
+fit.full <- glm(injured ~ age + minutes_played + training_load +
+                  prev_injuries + bmi + position,
+                family = binomial, data = players)
+summary(fit.full)          # Wald z-tests for each coefficient
+
+# LRT: null model vs full model (cf. budworm example)
+Lambda <- fit.full$null.deviance - fit.full$deviance
+df     <- fit.full$df.null - fit.full$df.residual
+c(Lambda = Lambda, df = df, p.value = 1 - pchisq(Lambda, df))
+
+## ---- A4. Model selection by LRT -------------------------------------
+# Each term tested by dropping it from the full model.
+# LRT is preferred to Wald (Faraway: Wald SEs can be overestimated).
+drop1(fit.full, test = "Chisq")
+
+# Result (16 Nov): drop1 showed strong evidence for prev_injuries,
+# age and training_load; no evidence for minutes_played, bmi, position.
+# Test dropping those three terms JOINTLY with an LRT:
+fit.red <- glm(injured ~ age + training_load + prev_injuries,
+               family = binomial, data = players)
+summary(fit.red)
+anova(fit.red, fit.full, test = "Chisq")   # H0: reduced model adequate
+
+# Interaction check (cf. infant respiratory example): does the effect of
+# training load differ by position?
+fit.int <- glm(injured ~ age + training_load * position + prev_injuries,
+               family = binomial, data = players)
+anova(fit.red, fit.int, test = "Chisq")
+
+## ---- A5. Odds ratios with confidence intervals ----------------------
+final.A <- fit.red         # reduced model chosen by LRT (see A4)
+
+# Profile-likelihood CIs (preferred), on the odds-ratio scale
+exp(cbind(OR = coef(final.A), confint(final.A)))
+
+# Asymptotic (Wald) CIs, for comparison
+exp(cbind(OR = coef(final.A), confint.default(final.A)))
+
+# Odds ratio for a change of `a` units in x is exp(beta * a),
+# e.g. 5 years older:
+exp(5 * coef(final.A)["age"])
+
+## ---- A6. Notes for later weeks --------------------------------------
+# Binary (ungrouped) data: the residual deviance is NOT chi-squared
+# distributed, so it cannot be used as a goodness-of-fit test here
+# (week 3 notes: asymptotic results differ for n_i = 1). Goodness of fit
+# and residual diagnostics will be added once covered.
+
+
+## =====================================================================
+## PART B: Is Ashford's chance of winning associated with venue and
+## opponent strength?
+## =====================================================================
+
+## ---- B1. Derive binary response -------------------------------------
+matches$win <- as.integer(matches$goals_scored > matches$goals_conceded)
+table(matches$home_away, matches$win)
+tapply(matches$win, matches$home_away, mean)
+
+plot(matches$opponent_rank, jitter(matches$win, 0.2),
+     col = ifelse(matches$home_away == "Home", "black", "grey50"),
+     pch = ifelse(matches$home_away == "Home", 16, 1),
+     xlab = "Opponent league rank (1 = strongest)", ylab = "Win (1 = yes)")
+legend("right", c("Home", "Away"), pch = c(16, 1),
+       col = c("black", "grey50"))
+
+## ---- B2. Fit models (cf. budworm additive model) --------------------
+fit.B.add <- glm(win ~ opponent_rank + home_away,
+                 family = binomial, data = matches)
+summary(fit.B.add)
+
+fit.B.int <- glm(win ~ opponent_rank * home_away,
+                 family = binomial, data = matches)
+
+anova(fit.B.add, fit.B.int, test = "Chisq")  # interaction needed?
+drop1(fit.B.add, test = "Chisq")             # each main effect
+
+## ---- B3. Interpretation ---------------------------------------------
+exp(cbind(OR = coef(fit.B.add), confint(fit.B.add)))
+
+# Fitted win probability curves, home vs away
+rank.grid <- 1:24
+plot(matches$opponent_rank, matches$win, type = "n",
+     xlab = "Opponent league rank", ylab = "P(win)", ylim = c(0, 1))
+lines(rank.grid, predict(fit.B.add,
+      data.frame(opponent_rank = rank.grid, home_away = "Home"),
+      type = "response"), lwd = 2)
+lines(rank.grid, predict(fit.B.add,
+      data.frame(opponent_rank = rank.grid, home_away = "Away"),
+      type = "response"), lwd = 2, lty = 2)
+legend("topleft", c("Home fitted", "Away fitted"), lty = c(1, 2), lwd = 2)
+
+# Horizontal shift between curves, in rank places (cf. alpha = b2/b1):
+# how many places weaker an away opponent must be to give the same
+# win probability as at home.
+b <- coef(fit.B.add)
+b["home_awayHome"] / b["opponent_rank"]
