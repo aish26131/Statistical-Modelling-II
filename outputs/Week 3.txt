@@ -1,0 +1,39 @@
+#read in data
+players<-read.csv("league_players.csv",header=T)
+matches<-read.csv("ashford_matches.csv",header=T)
+players$position<-factor(players$position)
+
+#fit full logistic model with all predictors
+full_model <- glm(injured ~ age + minutes_played + training_load +
+                    prev_injuries + bmi + position,
+                  family = binomial(link = "logit"), data = players)
+
+#reduced model chosen by likelihood ratio tests
+reduced_model <- glm(injured ~ age + training_load + prev_injuries,
+                     family = binomial(link = "logit"), data = players)
+
+#logistic model for Ashford wins
+matches$win <- as.integer(matches$goals_scored > matches$goals_conceded)
+win_model <- glm(win ~ opponent_rank + home_away,
+                 family = binomial(link = "logit"), data = matches)
+
+#save week 3 outputs
+write.csv(drop1(full_model, test = "Chisq"), "week3_injury_drop1.csv")
+write.csv(round(exp(cbind(odds_ratio = coef(reduced_model), confint(reduced_model))), 3),
+          "week3_injury_odds_ratios.csv")
+write.csv(round(exp(cbind(odds_ratio = coef(win_model), confint(win_model))), 3),
+          "week3_win_odds_ratios.csv")
+
+#plot of predicted injury probability by training load (age fixed at average)
+png("week3_injury_probability.png", width = 800, height = 600)
+new_players <- expand.grid(training_load = 1:5, prev_injuries = c(0, 2),
+                           age = mean(players$age))
+new_players$prob <- predict(reduced_model, new_players, type = "response")
+plot(1:5, new_players$prob[new_players$prev_injuries == 0], type = "b", pch = 16,
+     ylim = c(0, 1), xlab = "Training load",
+     ylab = "Predicted probability of injury",
+     main = "Predicted injury probability (average age)")
+lines(1:5, new_players$prob[new_players$prev_injuries == 2], type = "b", lty = 2)
+legend("topleft", c("0 previous injuries", "2 previous injuries"),
+       lty = c(1, 2), pch = c(16, 1))
+dev.off()
