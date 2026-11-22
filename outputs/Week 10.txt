@@ -1,0 +1,418 @@
+> # MTH6134 Statistical Modelling II
+> # Week 10 - Hierarchical Models
+> 
+> # 1. Install required packages
+> if (!requireNamespace("rlang", quietly = TRUE)) {
++   install.packages("rlang")
++ }
+> 
+> if (!requireNamespace("lme4", quietly = TRUE)) {
++   install.packages("lme4")
++ }
+> 
+> # Load package
+> library(lme4)
+> 
+> 
+> # 2. Import dataset
+> players <- read.csv("league_players.csv")
+> 
+> # Inspect data
+> head(players)
+            team position age minutes_played training_load prev_injuries  bmi
+1 Ashford United      DEF  27           3117             4             0 25.2
+2 Ashford United       GK  27           3960             4             2 21.8
+3 Ashford United      DEF  27           2172             2             2 19.0
+4 Ashford United      DEF  21           2782             2             3 20.5
+5 Ashford United       GK  26           3472             5             0 24.1
+6 Ashford United      FWD  25           2242             2             0 23.3
+  injured
+1       1
+2       0
+3       0
+4       1
+5       0
+6       0
+> names(players)
+[1] "team"           "position"       "age"            "minutes_played"
+[5] "training_load"  "prev_injuries"  "bmi"            "injured"       
+> str(players)
+'data.frame':	620 obs. of  8 variables:
+ $ team          : chr  "Ashford United" "Ashford United" "Ashford United" "Ashford United" ...
+ $ position      : chr  "DEF" "GK" "DEF" "DEF" ...
+ $ age           : int  27 27 27 21 26 25 24 26 25 26 ...
+ $ minutes_played: int  3117 3960 2172 2782 3472 2242 2887 2979 2474 2558 ...
+ $ training_load : int  4 4 2 2 5 2 3 3 2 2 ...
+ $ prev_injuries : int  0 2 2 3 0 0 1 0 0 1 ...
+ $ bmi           : num  25.2 21.8 19 20.5 24.1 23.3 22.8 24.1 21.7 26.4 ...
+ $ injured       : int  1 0 0 1 0 0 0 0 0 0 ...
+> summary(players)
+     team             position              age        minutes_played
+ Length:620         Length:620         Min.   :17.00   Min.   : 105  
+ Class :character   Class :character   1st Qu.:22.00   1st Qu.:2025  
+ Mode  :character   Mode  :character   Median :25.00   Median :2544  
+                                       Mean   :25.06   Mean   :2540  
+                                       3rd Qu.:28.00   3rd Qu.:3058  
+                                       Max.   :36.00   Max.   :3960  
+ training_load   prev_injuries         bmi           injured      
+ Min.   :1.000   Min.   :0.0000   Min.   :19.00   Min.   :0.0000  
+ 1st Qu.:3.000   1st Qu.:0.0000   1st Qu.:22.57   1st Qu.:0.0000  
+ Median :3.000   Median :1.0000   Median :23.60   Median :0.0000  
+ Mean   :3.202   Mean   :0.9032   Mean   :23.52   Mean   :0.1855  
+ 3rd Qu.:4.000   3rd Qu.:1.0000   3rd Qu.:24.50   3rd Qu.:0.0000  
+ Max.   :5.000   Max.   :4.0000   Max.   :27.90   Max.   :1.0000  
+> colSums(is.na(players))
+          team       position            age minutes_played  training_load 
+             0              0              0              0              0 
+ prev_injuries            bmi        injured 
+             0              0              0 
+> 
+> 
+> # 3. Prepare variables
+> players$team <- factor(players$team)
+> players$position <- factor(players$position)
+> 
+> players$injured <- as.numeric(
++   as.character(players$injured)
++ )
+> 
+> # Check outcome and grouping
+> table(players$injured)
+
+  0   1 
+505 115 
+> table(players$team)
+
+  Ashford United     Bramley Town    Casterwick FC Dunmore Athletic 
+              25               26               24               28 
+   Elwick Rovers    Ferndale City     Grantwick FC  Hartwell United 
+              24               28               27               27 
+     Ironside FC  Jarrow Athletic     Kelwick Town     Longton City 
+              24               26               25               25 
+    Moorfield FC   Norbury United      Oldham Vale  Penwick Rangers 
+              24               28               27               24 
+   Queensbury FC     Redwick Town    Stanwick City    Thornbury AFC 
+              26               24               24               25 
+     Ulverton FC   Vale Wanderers      Westgate FC   Yorwick United 
+              28               28               25               28 
+> 
+> # Check variable types
+> str(players)
+'data.frame':	620 obs. of  8 variables:
+ $ team          : Factor w/ 24 levels "Ashford United",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ position      : Factor w/ 4 levels "DEF","FWD","GK",..: 1 3 1 1 3 2 4 1 1 3 ...
+ $ age           : int  27 27 27 21 26 25 24 26 25 26 ...
+ $ minutes_played: int  3117 3960 2172 2782 3472 2242 2887 2979 2474 2558 ...
+ $ training_load : int  4 4 2 2 5 2 3 3 2 2 ...
+ $ prev_injuries : int  0 2 2 3 0 0 1 0 0 1 ...
+ $ bmi           : num  25.2 21.8 19 20.5 24.1 23.3 22.8 24.1 21.7 26.4 ...
+ $ injured       : num  1 0 0 1 0 0 0 0 0 0 ...
+> 
+> 
+> # 4. Explore injury rates between clubs
+> 
+> injury_rates <- aggregate(
++   injured ~ team,
++   data = players,
++   FUN = mean
++ )
+> 
+> print(injury_rates)
+               team    injured
+1    Ashford United 0.16000000
+2      Bramley Town 0.26923077
+3     Casterwick FC 0.16666667
+4  Dunmore Athletic 0.14285714
+5     Elwick Rovers 0.12500000
+6     Ferndale City 0.10714286
+7      Grantwick FC 0.44444444
+8   Hartwell United 0.11111111
+9       Ironside FC 0.20833333
+10  Jarrow Athletic 0.19230769
+11     Kelwick Town 0.20000000
+12     Longton City 0.28000000
+13     Moorfield FC 0.08333333
+14   Norbury United 0.14285714
+15      Oldham Vale 0.22222222
+16  Penwick Rangers 0.08333333
+17    Queensbury FC 0.15384615
+18     Redwick Town 0.20833333
+19    Stanwick City 0.16666667
+20    Thornbury AFC 0.28000000
+21      Ulverton FC 0.14285714
+22   Vale Wanderers 0.10714286
+23      Westgate FC 0.24000000
+24   Yorwick United 0.21428571
+> 
+> barplot(
++   injury_rates$injured,
++   names.arg = injury_rates$team,
++   las = 2,
++   cex.names = 0.6,
++   main = "Injury proportion by club",
++   ylab = "Proportion injured",
++   col = "lightblue"
++ )
+> 
+> 
+> # 5. Standard logistic regression
+> 
+> logistic_model <- glm(
++   injured ~ age + training_load +
++     prev_injuries + position,
++   family = binomial(link = "logit"),
++   data = players
++ )
+> 
+> summary(logistic_model)
+
+Call:
+glm(formula = injured ~ age + training_load + prev_injuries + 
+    position, family = binomial(link = "logit"), data = players)
+
+Coefficients:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept)   -5.91536    0.87103  -6.791 1.11e-11 ***
+age            0.10757    0.02935   3.665 0.000247 ***
+training_load  0.30454    0.11096   2.745 0.006058 ** 
+prev_injuries  0.50531    0.09126   5.537 3.08e-08 ***
+positionFWD    0.04550    0.30480   0.149 0.881345    
+positionGK     0.59017    0.36216   1.630 0.103186    
+positionMID    0.14917    0.27021   0.552 0.580914    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 594.71  on 619  degrees of freedom
+Residual deviance: 536.53  on 613  degrees of freedom
+AIC: 550.53
+
+Number of Fisher Scoring iterations: 5
+
+> 
+> 
+> # 6. Mixed-effects logistic regression
+> 
+> mixed_model <- glmer(
++   injured ~ age + training_load +
++     prev_injuries + position + (1 | team),
++   family = binomial(link = "logit"),
++   data = players,
++   control = glmerControl(
++     optimizer = "bobyqa"
++   )
++ )
+boundary (singular) fit: see help('isSingular')
+> 
+> summary(mixed_model)
+Generalized linear mixed model fit by maximum likelihood (Laplace
+  Approximation) [glmerMod]
+ Family: binomial  ( logit )
+Formula: injured ~ age + training_load + prev_injuries + position + (1 |  
+    team)
+   Data: players
+Control: glmerControl(optimizer = "bobyqa")
+
+      AIC       BIC    logLik -2*log(L)  df.resid 
+    552.5     588.0    -268.3     536.5       612 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-1.4092 -0.4720 -0.3663 -0.2478  4.9500 
+
+Random effects:
+ Groups Name        Variance Std.Dev.
+ team   (Intercept) 0        0       
+Number of obs: 620, groups:  team, 24
+
+Fixed effects:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept)   -5.91536    0.87103  -6.791 1.11e-11 ***
+age            0.10757    0.02935   3.665 0.000247 ***
+training_load  0.30454    0.11096   2.745 0.006058 ** 
+prev_injuries  0.50531    0.09126   5.537 3.08e-08 ***
+positionFWD    0.04550    0.30480   0.149 0.881345    
+positionGK     0.59017    0.36216   1.630 0.103186    
+positionMID    0.14917    0.27021   0.552 0.580914    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) age    trnng_ prv_nj pstFWD pstnGK
+age         -0.872                                   
+training_ld -0.391 -0.032                            
+prev_injurs -0.206  0.092  0.007                     
+positionFWD -0.074 -0.035 -0.071 -0.050              
+positionGK  -0.119  0.051 -0.094 -0.032  0.345       
+positionMID -0.115 -0.019 -0.057 -0.025  0.459  0.386
+optimizer (bobyqa) convergence code: 0 (OK)
+boundary (singular) fit: see help('isSingular')
+
+> 
+> 
+> # 7. Compare models
+> 
+> AIC(logistic_model, mixed_model)
+               df      AIC
+logistic_model  7 550.5286
+mixed_model     8 552.5286
+> 
+> BIC(logistic_model, mixed_model)
+               df      BIC
+logistic_model  7 581.5366
+mixed_model     8 587.9663
+> 
+> anova(logistic_model, mixed_model,
++       test = "Chisq")
+Analysis of Deviance Table
+
+Model: binomial, link: logit
+
+Response: injured
+
+Terms added sequentially (first to last)
+
+
+              Df Deviance Resid. Df Resid. Dev  Pr(>Chi)    
+NULL                            619     594.71              
+age            1  13.7770       618     580.94 0.0002058 ***
+training_load  1  10.1852       617     570.75 0.0014157 ** 
+prev_injuries  1  31.4817       616     539.27 2.013e-08 ***
+position       3   2.7412       613     536.53 0.4332629    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> 
+> 
+> # 8. Examine random effects
+> 
+> VarCorr(mixed_model)
+ Groups Name        Std.Dev.
+ team   (Intercept) 0       
+> 
+> ranef(mixed_model)
+$team
+                 (Intercept)
+Ashford United             0
+Bramley Town               0
+Casterwick FC              0
+Dunmore Athletic           0
+Elwick Rovers              0
+Ferndale City              0
+Grantwick FC               0
+Hartwell United            0
+Ironside FC                0
+Jarrow Athletic            0
+Kelwick Town               0
+Longton City               0
+Moorfield FC               0
+Norbury United             0
+Oldham Vale                0
+Penwick Rangers            0
+Queensbury FC              0
+Redwick Town               0
+Stanwick City              0
+Thornbury AFC              0
+Ulverton FC                0
+Vale Wanderers             0
+Westgate FC                0
+Yorwick United             0
+
+with conditional variances for “team” 
+> 
+> isSingular(mixed_model)
+[1] TRUE
+> 
+> 
+> # 9. Interpret fixed effects
+> 
+> exp(fixef(mixed_model))
+  (Intercept)           age training_load prev_injuries   positionFWD 
+  0.002697699   1.113568245   1.356007281   1.657491258   1.046547322 
+   positionGK   positionMID 
+  1.804292218   1.160867499 
+> 
+> exp(confint(
++   mixed_model,
++   parm = "beta_",
++   method = "Wald"
++ ))
+                     2.5 %     97.5 %
+(Intercept)   0.0004892948 0.01487361
+age           1.0513235018 1.17949826
+training_load 1.0909683362 1.68543457
+prev_injuries 1.3860102827 1.98214783
+positionFWD   0.5758494351 1.90199248
+positionGK    0.8872372728 3.66922187
+positionMID   0.6835689826 1.97143724
+> 
+> 
+> # 10. Model diagnostics
+> 
+> pearson_res <- residuals(
++   mixed_model,
++   type = "pearson"
++ )
+> 
+> fitted_probs <- fitted(mixed_model)
+> 
+> plot(
++   fitted_probs,
++   pearson_res,
++   xlab = "Fitted injury probability",
++   ylab = "Pearson residuals",
++   main = "Mixed model diagnostics",
++   pch = 19
++ )
+> 
+> abline(h = 0, col = "red", lty = 2)
+> 
+> 
+> # 11. Compare observed and predicted
+> # injury proportions by club
+> 
+> players$predicted_injury <- fitted(mixed_model)
+> 
+> club_predictions <- aggregate(
++   cbind(injured, predicted_injury) ~ team,
++   data = players,
++   FUN = mean
++ )
+> 
+> print(club_predictions)
+               team    injured predicted_injury
+1    Ashford United 0.16000000        0.1752472
+2      Bramley Town 0.26923077        0.2188458
+3     Casterwick FC 0.16666667        0.1584199
+4  Dunmore Athletic 0.14285714        0.1914676
+5     Elwick Rovers 0.12500000        0.1504098
+6     Ferndale City 0.10714286        0.1774496
+7      Grantwick FC 0.44444444        0.2348763
+8   Hartwell United 0.11111111        0.1755036
+9       Ironside FC 0.20833333        0.2165180
+10  Jarrow Athletic 0.19230769        0.1765231
+11     Kelwick Town 0.20000000        0.2116672
+12     Longton City 0.28000000        0.2187731
+13     Moorfield FC 0.08333333        0.1614796
+14   Norbury United 0.14285714        0.1467692
+15      Oldham Vale 0.22222222        0.1786234
+16  Penwick Rangers 0.08333333        0.1937318
+17    Queensbury FC 0.15384615        0.1689294
+18     Redwick Town 0.20833333        0.1813325
+19    Stanwick City 0.16666667        0.1689546
+20    Thornbury AFC 0.28000000        0.1723204
+21      Ulverton FC 0.14285714        0.2299762
+22   Vale Wanderers 0.10714286        0.1624499
+23      Westgate FC 0.24000000        0.1592804
+24   Yorwick United 0.21428571        0.2151967
+> 
+> plot(
++   club_predictions$injured,
++   club_predictions$predicted_injury,
++   xlab = "Observed injury proportion",
++   ylab = "Predicted injury proportion",
++   main = "Observed vs predicted by club",
++   pch = 19
++ )
+> 
+> abline(0, 1, col = "red", lty = 2)
