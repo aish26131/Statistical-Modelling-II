@@ -1,0 +1,116 @@
+> # Week 11 - Accounting for grouped data
+> 
+> # Check both models exist
+> exists("logistic_model")
+[1] TRUE
+> exists("mixed_model")
+[1] TRUE
+> 
+> # Compare model fit
+> AIC(logistic_model, mixed_model)
+               df      AIC
+logistic_model  7 550.5286
+mixed_model     8 552.5286
+> BIC(logistic_model, mixed_model)
+               df      BIC
+logistic_model  7 581.5366
+mixed_model     8 587.9663
+> 
+> # Compare fixed-effect estimates
+> summary(logistic_model)
+
+Call:
+glm(formula = injured ~ age + training_load + prev_injuries + 
+    position, family = binomial(link = "logit"), data = players)
+
+Coefficients:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept)   -5.91536    0.87103  -6.791 1.11e-11 ***
+age            0.10757    0.02935   3.665 0.000247 ***
+training_load  0.30454    0.11096   2.745 0.006058 ** 
+prev_injuries  0.50531    0.09126   5.537 3.08e-08 ***
+positionFWD    0.04550    0.30480   0.149 0.881345    
+positionGK     0.59017    0.36216   1.630 0.103186    
+positionMID    0.14917    0.27021   0.552 0.580914    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 594.71  on 619  degrees of freedom
+Residual deviance: 536.53  on 613  degrees of freedom
+AIC: 550.53
+
+Number of Fisher Scoring iterations: 5
+
+> summary(mixed_model)
+Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) [
+glmerMod]
+ Family: binomial  ( logit )
+Formula: injured ~ age + training_load + prev_injuries + position + (1 |      team)
+   Data: players
+Control: glmerControl(optimizer = "bobyqa")
+
+      AIC       BIC    logLik -2*log(L)  df.resid 
+    552.5     588.0    -268.3     536.5       612 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-1.4092 -0.4720 -0.3663 -0.2478  4.9500 
+
+Random effects:
+ Groups Name        Variance Std.Dev.
+ team   (Intercept) 0        0       
+Number of obs: 620, groups:  team, 24
+
+Fixed effects:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept)   -5.91536    0.87103  -6.791 1.11e-11 ***
+age            0.10757    0.02935   3.665 0.000247 ***
+training_load  0.30454    0.11096   2.745 0.006058 ** 
+prev_injuries  0.50531    0.09126   5.537 3.08e-08 ***
+positionFWD    0.04550    0.30480   0.149 0.881345    
+positionGK     0.59017    0.36216   1.630 0.103186    
+positionMID    0.14917    0.27021   0.552 0.580914    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Correlation of Fixed Effects:
+            (Intr) age    trnng_ prv_nj pstFWD pstnGK
+age         -0.872                                   
+training_ld -0.391 -0.032                            
+prev_injurs -0.206  0.092  0.007                     
+positionFWD -0.074 -0.035 -0.071 -0.050              
+positionGK  -0.119  0.051 -0.094 -0.032  0.345       
+positionMID -0.115 -0.019 -0.057 -0.025  0.459  0.386
+optimizer (bobyqa) convergence code: 0 (OK)
+boundary (singular) fit: see help('isSingular')
+
+> 
+> # Estimated between-club variance
+> VarCorr(mixed_model)
+ Groups Name        Std.Dev.
+ team   (Intercept) 0       
+> 
+> # Check singularity
+> isSingular(mixed_model)
+[1] TRUE
+> 
+> # Compare coefficients and standard errors
+> comparison <- data.frame(
++   Variable = names(coef(logistic_model)),
++   Logistic_Estimate = coef(logistic_model),
++   Mixed_Estimate = fixef(mixed_model),
++   Logistic_SE = sqrt(diag(vcov(logistic_model))),
++   Mixed_SE = sqrt(diag(vcov(mixed_model)))
++ )
+> 
+> print(comparison)
+                   Variable Logistic_Estimate Mixed_Estimate Logistic_SE   Mixed_SE
+(Intercept)     (Intercept)       -5.91535799    -5.91535607  0.87103112 0.87103101
+age                     age        0.10756954     0.10756949  0.02934730 0.02934730
+training_load training_load        0.30454467     0.30454456  0.11096066 0.11096065
+prev_injuries prev_injuries        0.50530531     0.50530517  0.09126487 0.09126487
+positionFWD     positionFWD        0.04549652     0.04549648  0.30480437 0.30480434
+positionGK       positionGK        0.59016858     0.59016839  0.36215526 0.36215524
+positionMID     positionMID        0.14916760     0.14916757  0.27020666 0.27020663
