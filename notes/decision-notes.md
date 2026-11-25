@@ -21,7 +21,7 @@ Exploratory analysis revealed differences in age, previous injuries and injury p
 
 3. Choice of statistical model
 
-We selected binary logistic regression with a logit link because the response variable, injury status, takes two possible values: injured or not injured.
+We selected a generalised linear model with a binomial response distribution and logit link because injury status is binary.
 
 We also considered a mixed-effects logistic regression model with a club-level random intercept because players belonging to the same club may share characteristics or training environments.
 
@@ -41,7 +41,7 @@ The categorical representation did not significantly improve model fit (p = 0.24
 
 We investigated quadratic terms for age and previous injuries to assess whether their relationships with injury log-odds departed from linearity.
 
-Neither quadratic term provided a statistically significant improvement in model fit. Consequently, we retained the simpler linear terms.
+Neither quadratic term provided a statistically significant improvement in model fit (p = 0.400 and p = 0.496, respectively). Consequently, we retained the simpler linear terms.
 
 7. Assessment of interaction effects
 
@@ -61,25 +61,75 @@ We therefore retained standard logistic regression because the data did not prov
 
 9. Model diagnostics and goodness of fit
 
-We assessed model adequacy using Pearson residuals, Cook's distance, calibration, the Pearson dispersion statistic and McFadden's pseudo-R².
+The final model significantly improved upon the null model (χ²(3) = 55.44, p < 0.001). However, improvement relative to the null model does not establish adequate absolute model fit.
 
-The Pearson dispersion statistic of 1.065 indicated no substantial overdispersion. However, imperfect calibration and a McFadden's pseudo-R² of 0.093 highlighted limitations in the model's explanatory and predictive performance.
+We assessed model adequacy using Pearson residuals, Cook’s distance, calibration, the Pearson dispersion statistic and McFadden’s pseudo-R².
 
-We acknowledged these limitations rather than concluding that statistical significance alone demonstrated adequate model fit.
+The Pearson dispersion statistic was 1.065. Following the lecturer’s GLM guidance, this statistic was interpreted cautiously given the ungrouped binary response. Imperfect calibration and a McFadden’s pseudo-R² of 0.093 highlighted limitations in model performance. In the highest predicted-risk group, the observed injury proportion was 54.8%, compared with a predicted probability of 46.4%.
+
+We assessed leverage using the lecturer’s recommended threshold of 2p/n = 0.01290. This identified 54 high-leverage observations (8.7% of the dataset). Only one observation exceeded both the leverage and the lecturer’s Cook’s distance thresholds, demonstrating that high leverage does not necessarily imply high influence.
+
+We additionally examined standardised deviance residuals against fitted probabilities and a normal Q-Q plot. The residuals formed two distinct bands, consistent with the binary response. Departures from normality were interpreted cautiously because normally distributed residuals are not an assumption of binary logistic regression.
+
+Of the 620 observations, 26 (4.2%) had absolute standardised deviance residuals exceeding two, while none exceeded three. These screening thresholds were interpreted cautiously given the binary response. Combined with the leverage, influence and calibration assessments, these findings did not provide sufficient justification for changing the final model or excluding observations. Nevertheless, imperfect calibration and sensitivity of effect sizes were acknowledged as limitations.
 
 10. Sensitivity analysis
 
-Following the lecturer’s GLM guidance, we additionally applied the Cook’s distance threshold of 8/(n − 2p), identifying 11 potentially influential observations. Excluding these observations increased the adjusted odds ratios for age, training load and previous injuries from 1.111, 1.377 and 1.667 to 1.168, 1.624 and 1.887, respectively. All associations remained positive and statistically significant. Comparing both thresholds demonstrated robustness in the direction of associations, but sensitivity in their magnitudes. We therefore retained all 620 observations in the primary analysis.
+We initially applied the Cook’s distance threshold of 4/n = 0.00645, identifying 51 potentially influential observations.
+
+Following the lecturer’s GLM guidance, we additionally applied the threshold of 8/(n − 2p) = 0.01307, identifying 11 potentially influential observations.
+
+We refitted the model separately after excluding the observations identified by each threshold.
+
+Predictor
+
+Original OR
+
+Excluding 11
+
+Excluding 51
+
+Age
+
+1.111
+
+1.168
+
+1.268
+
+Training load
+
+1.377
+
+1.624
+
+2.494
+
+Previous injuries
+
+1.667
+
+1.887
+
+2.754
+
+All associations remained positive and statistically significant, although their estimated magnitudes increased following exclusion.
+
+Comparing both thresholds demonstrated robustness in the direction of associations but sensitivity in their magnitudes.
+
+We retained all 620 observations in the primary analysis because influential observations are not necessarily erroneous, and their exclusion could introduce bias. AIC values from the sensitivity models were not directly compared with those from the primary model because they were fitted to different datasets.
 
 11. Presentation and interpretation of results
 
 We decided to present adjusted odds ratios with 95% Wald confidence intervals rather than relying solely on regression coefficients and p-values. This improves interpretability for a non-specialist audience and communicates uncertainty.
 
-We prioritised the results table in the main report because of the four-page limit. Exploratory and diagnostic plots are retained in the shared workspace as supporting evidence.
+We prioritised the results table in the main report because of the four-page limit. Exploratory and diagnostic plots are intended for inclusion in the shared workspace as supporting evidence.
 
 12. Final model and limitations
 
 Our final model is a binary logistic regression model containing age, numerical training load and previous injuries.
+
+All three predictors were positively associated with injury odds. Accounting for additional club-level variation did not improve model fit.
 
 We acknowledge that the estimated associations are sensitive in magnitude to the exclusion of influential observations, calibration is imperfect, and predictive performance has not been independently validated. Furthermore, the analysis does not establish causal relationships.
 
