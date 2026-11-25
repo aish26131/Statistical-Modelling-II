@@ -16,4 +16,4 @@ Aishvini uploaded the Week 11 Code and Outputs.
 
 **FINAL PROJECT**
 
-Aishvini did Question 1 on the report and uploaded outputs.
+Aishvini did Question 1 on the report and uploaded Outputs of plots.
