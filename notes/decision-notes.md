@@ -4,7 +4,8 @@ Lily Week 3: Week 3 logistic regression. Extended Week 4’s injury model to all
 Lily Week 9: proportional odds model for Loss/Draw/Win: home OR 5.3 (1.6–19.1), opponent rank OR 1.13 per place; PO assumption not rejected (LRT p = 0.42). Matched-pairs analysis: 11 vs 3 discordant pairs, conditional OR 3.67 (1.02–13.1), exact test p = 0.057, so borderline. Bradley–Terry not applicable (only Ashford’s matches).
 
 **FINAL PROJECT**
-Aishvini Analysis 1: Player Injury Risk — Analytical Decisions Log
+
+**Aishvini Analysis 1: Player Injury Risk — Analytical Decisions Log**
 
 Research question: To what extent do age, training load and previous injuries explain player injury risk, and does accounting for differences between football clubs improve the model?
 
