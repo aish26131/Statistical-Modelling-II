@@ -19,6 +19,8 @@ We examined the dataset containing 620 players across 24 football clubs. No miss
 
 Exploratory analysis revealed differences in age, previous injuries and injury proportions across training load levels. These findings motivated further investigation using regression modelling.
 
+We additionally explored training load and previous injury history jointly. At training load levels 2–5, injury proportions were consistently higher among players with previous injuries. The varying differences between groups motivated investigation of a training load–previous injuries interaction. Findings at training load level 1 were interpreted cautiously because of the small sample size.
+
 3. Choice of statistical model
 
 We selected a generalised linear model with a binomial response distribution and logit link because injury status is binary.
@@ -30,6 +32,8 @@ We also considered a mixed-effects logistic regression model with a club-level r
 We fitted candidate models incorporating age, training load, previous injuries and playing position. Models were compared using AIC, BIC and likelihood ratio tests.
 
 We retained age, training load and previous injuries because they contributed to model fit. Playing position was excluded because its inclusion increased AIC and BIC and did not provide a statistically significant improvement in fit (p = 0.433).
+
+Nested models were compared using likelihood ratio tests (LRTs) at the 5% level, supplemented by AIC and BIC. Adjusted LRTs supported retaining age (χ²(1) = 13.53, p < 0.001), training load (χ²(1) = 8.59, p = 0.003) and previous injuries (χ²(1) = 31.48, p < 0.001). Playing position, categorical training load and quadratic terms provided insufficient improvement (all p > 0.05). Although a training load–previous injuries interaction marginally reduced AIC (ΔAIC = 0.43), the LRT (p = 0.119), BIC and parsimony favoured the main-effects model. The mixed-effects model produced a singular fit with zero estimated between-club variance and higher AIC (549.27 versus 547.27), supporting standard logistic regression.
 
 5. Representation of training load
 
@@ -124,6 +128,8 @@ We retained all 620 observations in the primary analysis because influential obs
 We decided to present adjusted odds ratios with 95% Wald confidence intervals rather than relying solely on regression coefficients and p-values. This improves interpretability for a non-specialist audience and communicates uncertainty.
 
 We prioritised the results table in the main report because of the four-page limit. Exploratory and diagnostic plots are intended for inclusion in the shared workspace as supporting evidence.
+
+Following the lecturer’s marking workshop guidance, we calculated fitted probabilities for hypothetical players aged 25 with one previous injury. Estimated injury probabilities were 11.9% and 26.0% at training load levels 2 and 5, respectively. This comparison was selected to communicate the training load association in practical terms while holding other predictors constant. These estimates are illustrative rather than causal predictions or independently validated risk assessments.
 
 12. Final model and limitations
 
