@@ -69,11 +69,7 @@ We acknowledged these limitations rather than concluding that statistical signif
 
 10. Sensitivity analysis
 
-Cook's distance identified 51 potentially influential observations using the screening threshold of 4/n.
-
-We refitted the model excluding these observations to investigate the robustness of our findings. Although all associations remained positive, the estimated effect sizes increased substantially.
-
-We decided to retain all 620 observations in the primary analysis because influential observations are not necessarily erroneous, and their exclusion could introduce bias.
+Following the lecturer’s GLM guidance, we additionally applied the Cook’s distance threshold of 8/(n − 2p), identifying 11 potentially influential observations. Excluding these observations increased the adjusted odds ratios for age, training load and previous injuries from 1.111, 1.377 and 1.667 to 1.168, 1.624 and 1.887, respectively. All associations remained positive and statistically significant. Comparing both thresholds demonstrated robustness in the direction of associations, but sensitivity in their magnitudes. We therefore retained all 620 observations in the primary analysis.
 
 11. Presentation and interpretation of results
 
