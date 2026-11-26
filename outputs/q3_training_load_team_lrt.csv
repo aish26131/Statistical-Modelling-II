@@ -1,0 +1,3 @@
+"","Model","Resid. df","Resid. Dev","Test","   Df","LR stat.","Pr(Chi)"
+"1","position + minutes_1000",612,1700.0753065721,"",NA,NA,NA
+"2","position + minutes_1000 + team",589,1663.23550684258,"1 vs 2",23,36.839799729521,0.0337913710326349
