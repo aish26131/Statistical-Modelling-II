@@ -140,3 +140,90 @@ All three predictors were positively associated with injury odds. Accounting for
 We acknowledge that the estimated associations are sensitive in magnitude to the exclusion of influential observations, calibration is imperfect, and predictive performance has not been independently validated. Furthermore, the analysis does not establish causal relationships.
 
 These limitations were incorporated into the report to ensure that the conclusions remain proportionate to the statistical evidence.
+
+
+
+
+Analysis 3: Player Training Load — Analytical Decisions Log
+
+Research question: What player characteristics are associated with training load, and does accounting for differences between football clubs improve the model?
+
+Choice of research question
+We selected training load because it is under the club's control and, as Analysis 1 shows, is associated with injury risk. Understanding which player characteristics are associated with higher training load is therefore relevant to workload management and player welfare. The question also uses the player data with a different response and a different model type from Analysis 1 (logistic regression, injury) and Analysis 2 (Poisson regression, goals), so the report covers three model families.
+
+Data preparation and exploratory analysis
+We used the dataset of 620 players across 24 football clubs. No missing values were identified, so no observations were excluded.
+Training load is recorded on an ordered 1–5 scale. The distribution is concentrated in the middle: 3.2% at level 1, 21.5% at level 2, 38.5% at level 3, 25.5% at level 4 and 11.3% at level 5.
+Cross-tabulation by position showed that goalkeepers had the largest share of high training loads (48% at level 4 or 5, compared with 34% of defenders, 34% of forwards and 38% of midfielders). Boxplots suggested that players with higher training loads had played more minutes, while age showed little difference across load levels.
+We rescaled minutes played to thousands of minutes so that odds ratios describe a practically meaningful change.
+
+Choice of statistical model
+We selected a proportional odds (cumulative logit) model because training load is an ordered categorical response.
+We did not treat training load as a continuous response in a linear model, because the categories are ordered but not necessarily equally spaced, and the response is bounded with only five levels.
+We considered a multinomial logistic model, which ignores the ordering and requires many more parameters. We used it as a comparison model to test the proportional odds assumption (see below).
+In the proportional odds model, a positive coefficient indicates higher odds of being in a higher training load category.
+
+Model selection
+We fitted a full model containing playing position, age, minutes played, BMI and previous injuries. Terms were assessed using likelihood ratio tests (LRTs) at the 5% level, supplemented by AIC and BIC.
+Single-term LRTs from the full model supported minutes played (χ²(1) = 34.08, p < 0.001) and playing position (χ²(3) = 11.52, p = 0.009). Age (p = 0.227), BMI (p = 0.283) and previous injuries (p = 0.156) did not provide a significant improvement.
+Because dropping several terms at once can differ from dropping them one at a time, we tested removing age, BMI and previous injuries jointly. The joint LRT was not significant (χ²(3) = 4.74, p = 0.192), and AIC decreased from 1717.3 to 1716.1, supporting the reduced model.
+In the reduced model, both remaining terms were required: minutes played (χ²(1) = 33.72, p < 0.001) and position (χ²(3) = 11.68, p = 0.009).
+
+Assessment of nonlinearity
+We added a quadratic term for minutes played to assess whether its relationship with the cumulative log-odds departed from linearity. It did not significantly improve fit (χ²(1) = 1.56, p = 0.212), so we retained the linear term.
+
+Assessment of interaction effects
+We investigated a position × minutes played interaction, because the association between minutes and training load could differ between positions (for example, for goalkeepers).
+The interaction was not significant (χ²(3) = 3.72, p = 0.294) and increased both AIC (1718.4 versus 1716.1) and BIC (1767.1 versus 1751.5). We therefore retained the main-effects model.
+
+Proportional odds assumption
+We compared the proportional odds model with a multinomial model containing the same predictors using an LRT. There was no evidence against the proportional odds assumption for the full model (χ²(21) = 25.71, p = 0.218) or the final model (χ²(12) = 17.41, p = 0.135). This test has limited power, so the conclusion is that the data are consistent with the assumption rather than that it is proven.
+
+Assessment of club-level variation
+We assessed club in two ways.
+Club as a fixed effect: adding club to the final model gave a borderline LRT (χ²(23) = 36.84, p = 0.034), but increased AIC (1725.2 versus 1716.1) and substantially increased BIC (1862.6 versus 1751.5), reflecting the 23 additional parameters.
+Club as a random intercept (cumulative link mixed model, ordinal package): the estimated between-club variance was small (0.066, SD 0.26). AIC was almost identical to the model without club (1715.75 versus 1716.08), and the position and minutes estimates were essentially unchanged (for example, minutes coefficient 0.693 versus 0.701).
+Because the evidence was mixed and accounting for club did not change the substantive conclusions, we retained the simpler proportional odds model without club. Club differences are reported as a limitation and sensitivity check.
+
+Model diagnostics and goodness of fit
+The final model significantly improved on the null model (χ²(4) = 39.80, p < 0.001). However, McFadden's pseudo-R² was low (0.023), indicating that position and minutes explain only a small part of the variation in training load.
+Observed and predicted proportions in each training load category agreed closely overall (for example, 0.385 observed versus 0.385 predicted at level 3). We interpreted this cautiously, because the threshold parameters ensure close agreement for the overall distribution.
+More informative calibration checks compared observed and predicted proportions with high training load (level 4 or 5) within subgroups:
+- By minutes played (thirds): low 0.290 observed versus 0.271 predicted; medium 0.345 versus 0.364; high 0.469 versus 0.467.
+- By position: defenders 0.338 versus 0.322; forwards 0.338 versus 0.379; goalkeepers 0.484 versus 0.466; midfielders 0.383 versus 0.378.
+Calibration was good across minutes groups. The model slightly over-predicted high load for forwards, which we note as a limitation.
+
+Sensitivity analysis
+Ten players had played fewer than 1000 minutes (minimum 105), giving them potential leverage on the minutes effect. We refitted the final model excluding these players.
+
+Predictor             Original OR   Excluding <1000 mins
+Forward vs defender   1.967         1.960
+Goalkeeper vs defender 1.207        1.254
+Midfielder vs defender 1.586        1.602
+Minutes (per 1000)    2.016         1.910
+
+All estimates were very similar, and the direction and significance of associations were unchanged. We therefore retained all 620 observations in the primary analysis.
+
+Presentation and interpretation of results
+We present odds ratios with 95% profile-likelihood confidence intervals, which are more interpretable for a non-specialist audience than coefficients on the log-odds scale.
+Final model odds ratios (95% CI):
+- Minutes played, per additional 1000 minutes: 2.02 (1.59–2.56)
+- Forwards versus defenders: 1.97 (1.30–2.98)
+- Midfielders versus defenders: 1.59 (1.11–2.27)
+- Goalkeepers versus defenders: 1.21 (0.70–2.07), no clear difference
+Holding position fixed, playing an extra 1000 minutes is associated with roughly double the odds of being in a higher training load category.
+To communicate this in practical terms, we calculated fitted probabilities of a high training load (level 4 or 5) for hypothetical players. At 2500 minutes, the estimated probability was 28.5% for a defender, 38.7% for a midfielder and 43.9% for a forward. For a defender, it rose from 16.5% at 1500 minutes to 44.6% at 3500 minutes. These estimates are illustrative, not causal predictions.
+An interesting finding is that goalkeepers had the highest raw proportion of high training loads, but after accounting for minutes played they did not differ clearly from defenders. This is because goalkeepers in the data tend to play more minutes. Forwards had the highest odds of a high load once minutes were accounted for.
+A plot of predicted probability of high training load against minutes played, by position, is included in the outputs folder.
+
+Final model and limitations
+Our final model is a proportional odds model for training load containing playing position and minutes played.
+Limitations:
+- The model explains little of the variation in training load (McFadden's pseudo-R² = 0.023), so other unmeasured factors are likely to matter.
+- The associations are not causal. Minutes played and training load may both reflect a player's role in the squad, and the direction of the relationship cannot be established.
+- There is some evidence of club differences (fixed-effect LRT p = 0.034), although they did not change the conclusions.
+- The proportional odds test has limited power, and the model slightly over-predicts high load for forwards.
+- Training load is recorded on a coarse 1–5 scale.
+These limitations will be reflected in the report so that the conclusions remain proportionate to the evidence.
+
+
